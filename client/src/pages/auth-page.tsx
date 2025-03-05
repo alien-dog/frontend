@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,37 @@ import { SiGoogle } from "react-icons/si";
 export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
+  const [authError, setAuthError] = useState<string | null>(null);
+
+  // Redirect to dashboard if user is already logged in
+  useEffect(() => {
+    if (user) {
+      console.log('User already authenticated, redirecting to profile page');
+      setLocation('/dashboard/profile');
+    }
+  }, [user, setLocation]);
+
+  // Check for error parameter in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    const message = params.get('message');
+    
+    if (error) {
+      let errorMessage = 
+        error === 'authentication_failed' ? 'Authentication failed. Please try again.' :
+        error === 'server_error' ? 'Server error. Please try again later.' :
+        error === 'invalid_response' ? 'Invalid response from authentication provider.' :
+        'Authentication error: ' + error;
+        
+      // Add the specific error message if available
+      if (message) {
+        errorMessage += ` (${message})`;
+      }
+      
+      setAuthError(errorMessage);
+    }
+  }, []);
 
   const loginForm = useForm({
     resolver: zodResolver(insertUserSchema),
@@ -28,20 +59,32 @@ export default function AuthPage() {
   });
 
   const handleGoogleLogin = () => {
-    window.location.href = "https://accounts.google.com/o/oauth2/auth?client_id=300845750505-9oh2tmiep0esng3opj7me5sbu62r0g9b.apps.googleusercontent.com&redirect_uri=http://localhost:8081/callback.html&response_type=token&scope=email%20profile";
-  };
-
-  useEffect(() => {
-    if (user) {
-      setLocation("/dashboard");
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/auth");
+    authUrl.searchParams.append("client_id", "300845750505-9oh2tmiep0esng3opj7me5sbu62r0g9b.apps.googleusercontent.com");
+    authUrl.searchParams.append("redirect_uri", "http://localhost:5173/callback.html");
+    authUrl.searchParams.append("response_type", "token");
+    authUrl.searchParams.append("scope", "email profile");
+    authUrl.searchParams.append("access_type", "online");
+    authUrl.searchParams.append("include_granted_scopes", "true");
+    
+    // Try to skip the account selection screen if possible
+    if (localStorage.getItem('google_user_info')) {
+      authUrl.searchParams.append("prompt", "none");
     }
-  }, [user, setLocation]);
+    
+    window.location.href = authUrl.toString();
+  };
 
   return (
     <div className="min-h-screen grid md:grid-cols-2">
       <div className="flex items-center justify-center p-8">
         <Card className="w-full max-w-md">
           <CardContent className="pt-6">
+            {authError && (
+              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
+                <span className="block sm:inline">{authError}</span>
+              </div>
+            )}
             <Tabs defaultValue="login">
               <TabsList className="grid grid-cols-2 w-full">
                 <TabsTrigger value="login">Login</TabsTrigger>

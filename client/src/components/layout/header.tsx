@@ -18,7 +18,7 @@ import {
   Settings,
   LogOut,
   LayoutDashboard,
-  Image as ImageIcon,
+  Image,
   ChevronDown,
   CircleUserRound,
   Menu,
@@ -67,7 +67,7 @@ export function Header() {
                 {logoUrl ? (
                   <img src={logoUrl} alt="Logo" className="h-8 w-auto" />
                 ) : (
-                  <ImageIcon className="h-6 w-6 text-primary" />
+                  <Image className="h-6 w-6 text-primary" />
                 )}
                 <div>
                   <span className="text-xl font-bold text-gray-900">iMagenWiz</span>
@@ -193,9 +193,14 @@ export function Header() {
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/dashboard/credits">
-                    <DropdownMenuItem className="cursor-pointer">
-                      <CreditCard className="h-4 w-4 mr-2" />
-                      <span>Credits & Billing</span>
+                    <DropdownMenuItem className="cursor-pointer" asChild>
+                      <a href="/dashboard/credits" onClick={(e) => {
+                        e.preventDefault();
+                        window.location.href = '/dashboard/credits';
+                      }}>
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        <span>Credits & Billing</span>
+                      </a>
                     </DropdownMenuItem>
                   </Link>
                   <Link href="/dashboard/settings">
